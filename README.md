@@ -18,11 +18,13 @@ make
 启动参数说明：
 
 1. 第一个参数选择着色模式：
-	- `0`：phong-shading（fragment，Blinn-Phong）
-	- `1`：gouraud-shading（vertex，Blinn-Phong）
-	- `2`：cook-torrance（PBR，GGX/Trowbridge-Reitz + Smith + Schlick Fresnel）
+	- `0`：phong-shading
+	- `1`：gouraud-shading
+	- `2`：cook-torrance
 
 2. 第二个参数选择模型名称，例如 `cube` 或 `dinosaur`
+
+接下来两个可选参数用于自定义 cook-torrance 模型中的 F0 和 roughness 参数
 
 
 第二个参数表示使用哪种模型，例如 "cube" 或 "dinosaur"
