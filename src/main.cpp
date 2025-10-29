@@ -55,6 +55,10 @@ int main(int argc, char** argv) {
     
     Shader gouraud_shader(std::string(SHADER_DIR) + "/gouraud-vertex.vs",
                   std::string(SHADER_DIR) + "/gouraud-fragment.fs");
+
+    // Cook-Torrance (PBR) shader
+    Shader cook_shader(std::string(SHADER_DIR) + "/cooktorrance-vertex.vs",
+                  std::string(SHADER_DIR) + "/cooktorrance-fragment.fs");
     
     int vertexCount = 0;
     std::string objName = "cube";
@@ -80,17 +84,37 @@ int main(int argc, char** argv) {
 
     // render loop
     // -----------
-    auto shader = &phong_shader;
-    if(argc > 1 && argv[1][0] == '1') shader = &gouraud_shader;
 
     glm::vec3 lightPos(4.0f, 4.0f, 4.0f);
     glm::vec3 viewPos(0.0f, 0.0f, 4.0f);
     glm::vec3 lightcolor(1.0f, 1.0f, 1.0f);
     glm::vec3 objcolor(0.0f, 0.5f, 1.5f);
-    glm::float32 ambientstrength(0.15f);
-    glm::float32 specularstrength(0.6f);
+    glm::float32 ambient(0.15f);
+    glm::float32 specular(0.5f);
     glm::float32 shininess(60.0f);
+    // parameters used by Cook-Torrance shader
+    float F0 = 0.7f;
+    float roughness = 0.2f;
     glm::mat4 rot = glm::mat4(1.0f);
+    auto shader = &phong_shader;
+    
+    if(argc > 1) {
+        if(argv[1][0] == '1') {
+            shader = &gouraud_shader;       // Gouraud
+        } else if(argv[1][0] == '2') {
+            shader = &cook_shader;      // Cook-Torrance
+            ambient = 0.1f;
+            lightcolor = glm::vec3(3.0f, 3.0f, 3.0f);
+            objcolor = glm::vec3(0.15f, 0.15f, 0.15f);
+            if(argc > 3) {
+                F0 = std::stof(argv[3]);
+            }
+            if(argc > 4) {
+                roughness = std::stof(argv[4]);
+            }
+        }
+    }
+
     if(argc > 2 && (std::string)argv[2] == "dinosaur") {
         viewPos = glm::vec3(0.0f, 0.0f, 150.0f);
         lightPos = glm::vec3(40.0f, 40.0f, 40.0f);
@@ -103,8 +127,7 @@ int main(int argc, char** argv) {
         lightPos = glm::vec3(4.0f, 4.0f, 4.0f);
         lightcolor = glm::vec3(0.8f, 0.8f, 0.8f);
     }
-    while (!glfwWindowShouldClose(window))
-    {
+    while (!glfwWindowShouldClose(window)) {
         processInput(window);
         float time = static_cast<float>(glfwGetTime());
         // 视口尺寸
@@ -131,9 +154,12 @@ int main(int argc, char** argv) {
         shader->setVec3("uViewPos", viewPos);
         shader->setVec3("uLightColor", lightcolor);
         shader->setVec3("uObjectColor", objcolor);
-        shader->setFloat("uAmbientStrength", ambientstrength);
-        shader->setBool("uSpecularStrength", specularstrength);
+        shader->setFloat("uAmbient", ambient);
+        shader->setFloat("uSpecular", specular);
         shader->setFloat("uShininess", shininess);
+        // Cook-Torrance uniforms (no-op for other shaders)
+        shader->setFloat("F0", F0);
+        shader->setFloat("uRoughness", roughness);
         glBindVertexArray(VAO); 
         glDrawArrays(GL_TRIANGLES, 0, vertexCount);
         glfwSwapBuffers(window);

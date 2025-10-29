@@ -1,6 +1,6 @@
 ### 图形学第一次实验
 
-实现了 gouraud-shading 与 phong-shading，均使用 blin-phong 光照模型。
+实现了 gouraud-shading 与 phong-shading（Blinn-Phong 模型），并新增了 Cook-Torrance 基于微表面（GGX）PBR 着色模型。
 
 #### 使用方法
 
@@ -13,8 +13,16 @@ cmake ..
 make
 ```
 
-之后使用 `./opengtest2`运行即可
+之后使用 `./opengltest2` 运行即可
 
-两个参数第一个表示使用哪种shading，0表示使用 phong-shading ，1表示使用 gouraud-shading
+启动参数说明：
+
+1. 第一个参数选择着色模式：
+	- `0`：phong-shading（fragment，Blinn-Phong）
+	- `1`：gouraud-shading（vertex，Blinn-Phong）
+	- `2`：cook-torrance（PBR，GGX/Trowbridge-Reitz + Smith + Schlick Fresnel）
+
+2. 第二个参数选择模型名称，例如 `cube` 或 `dinosaur`
+
 
 第二个参数表示使用哪种模型，例如 "cube" 或 "dinosaur"

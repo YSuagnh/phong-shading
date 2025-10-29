@@ -11,8 +11,8 @@ uniform vec3 uLightPos;     // 世界空间光源位置
 uniform vec3 uViewPos;      // 世界空间相机位置
 uniform vec3 uLightColor;   // 光颜色
 uniform vec3 uObjectColor;  // 物体基底颜色
-uniform float uAmbientStrength;   // 环境光强度
-uniform float uSpecularStrength;  // 高光强度系数
+uniform float uAmbient;   // 环境光强度
+uniform float uSpecular;  // 高光强度系数
 uniform float uShininess;         // 高光次幂
 
 void main()
@@ -27,7 +27,7 @@ void main()
     vec3 H = normalize(L + V); // Blinn-Phong 半角向量
 
     // 环境光
-    vec3 ambient = uAmbientStrength * uLightColor;
+    vec3 ambient = uAmbient * uLightColor;
 
     // 漫反射
     float diff = max(dot(N, L), 0.0);
@@ -35,7 +35,7 @@ void main()
 
     // 高光（Blinn-Phong）
     float spec = pow(max(dot(N, H), 0.0), uShininess);
-    vec3 specular = uSpecularStrength * spec * uLightColor;
+    vec3 specular = uSpecular * spec * uLightColor;
 
     oColor = (ambient + diffuse + specular) * uObjectColor;
 }
