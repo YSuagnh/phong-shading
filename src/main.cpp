@@ -62,7 +62,7 @@ int main(int argc, char** argv) {
     
     int vertexCount = 0;
     std::string objName = "cube";
-    if(argc > 2) objName = argv[2];
+    if(argc > 1) objName = argv[1];
     std::string objPath = std::string(TEST_DIR) + "/" + objName + ".obj";
     std::vector<float> vertices = loadOBJ(objPath, vertexCount);
 
@@ -89,41 +89,77 @@ int main(int argc, char** argv) {
     glm::vec3 viewPos(0.0f, 0.0f, 4.0f);
     glm::vec3 lightcolor(1.0f, 1.0f, 1.0f);
     glm::vec3 objcolor(0.0f, 0.5f, 1.5f);
-    glm::float32 ambient(0.15f);
+    glm::vec3 F0(0.15f, 0.15f, 0.15f);
+    glm::vec3 albedo(0.15f, 0.15f, 0.15f);
+    glm::float32 ambient(0.2f);
     glm::float32 specular(0.5f);
     glm::float32 shininess(60.0f);
+    glm::float32 metallic(1.0f);
     // parameters used by Cook-Torrance shader
-    float F0 = 0.7f;
-    float roughness = 0.2f;
+    float roughness = 0.35f;
     glm::mat4 rot = glm::mat4(1.0f);
     auto shader = &phong_shader;
     
-    if(argc > 1) {
-        if(argv[1][0] == '1') {
+    if(argc > 2) {
+        if(argv[2][0] == '1') {
             shader = &gouraud_shader;       // Gouraud
-        } else if(argv[1][0] == '2') {
+        } else if(argv[2][0] == '2') {
             shader = &cook_shader;      // Cook-Torrance
             ambient = 0.1f;
             lightcolor = glm::vec3(3.0f, 3.0f, 3.0f);
-            objcolor = glm::vec3(0.15f, 0.15f, 0.15f);
-            if(argc > 3) {
-                F0 = std::stof(argv[3]);
+        }
+        if(argc > 3) {
+            if(argv[3][0] == '1') { //铜
+                objcolor = F0 = glm::vec3(0.955f, 0.638f, 0.538f);
+                metallic = 1.0f;
+                albedo = glm::vec3(1.0f, 0.8f, 0.6f);
+                roughness = 0.2f;
+            } else if(argv[3][0] == '2') { //银
+                objcolor = F0 = glm::vec3(0.660f, 0.670f, 0.680f);
+                metallic = 1.0f;
+                albedo = glm::vec3(0.9f, 0.9f, 0.9f);
+                roughness = 0.4;
+            } else if(argv[3][0] == '3') { //皮革
+                objcolor = albedo = glm::vec3(0.23f, 0.12f, 0.05f);
+                F0 = glm::vec3(0.04f, 0.04f, 0.04f);
+                metallic = 0.0f;
+                roughness = 0.5f;
+            } else if(argv[3][0] == '4') { //铁
+                objcolor = F0 = glm::vec3(0.560f, 0.570f, 0.580f);
+                metallic = 1.0f;
+                albedo = glm::vec3(0.65f, 0.65f, 0.65f);
+                roughness = 0.3f;
+            } else if(argv[3][0] == '5') { //碳（石墨）
+                objcolor = F0 = glm::vec3(0.04f, 0.04f, 0.04f);
+                metallic = 0.0f;
+                albedo = glm::vec3(0.05f, 0.05f, 0.05f);
+                roughness = 0.8f;
+            } else if(argv[3][0] == '6') { //金
+                objcolor = F0 = glm::vec3(1.022f, 0.782f, 0.344f);
+                metallic = 1.0f;
+                albedo = glm::vec3(1.0f, 0.85f, 0.57f);
+                roughness = 0.3f;
+            } else if(argv[3][0] == '7') { //锡
+                objcolor = F0 = glm::vec3(0.549f, 0.556f, 0.554f);
+                metallic = 1.0f;
+                albedo = glm::vec3(0.75f, 0.75f, 0.75f);
+                roughness = 0.25f;
             }
-            if(argc > 4) {
-                roughness = std::stof(argv[4]);
-            }
+        }
+        if(argc > 4) {
+            roughness = std::stof(argv[4]);
         }
     }
 
-    if(argc > 2 && (std::string)argv[2] == "dinosaur") {
+    if(argc > 1 && (std::string)argv[1] == "dinosaur") {
         viewPos = glm::vec3(0.0f, 0.0f, 150.0f);
         lightPos = glm::vec3(40.0f, 40.0f, 40.0f);
         rot = glm::rotate(rot, 4.7f, glm::vec3(1.0f, 0.0f, 0.0f));
     }
-    if(argc > 2 && (std::string)argv[2] == "cube") {
+    if(argc > 1 && (std::string)argv[1] == "cube") {
         viewPos = glm::vec3(0.0f, 0.2f, 4.0f);
     }
-    if(argc > 2 && (std::string)argv[2] == "pyramid") {
+    if(argc > 1 && (std::string)argv[1] == "pyramid") {
         lightPos = glm::vec3(4.0f, 4.0f, 4.0f);
         lightcolor = glm::vec3(0.8f, 0.8f, 0.8f);
     }
@@ -157,8 +193,10 @@ int main(int argc, char** argv) {
         shader->setFloat("uAmbient", ambient);
         shader->setFloat("uSpecular", specular);
         shader->setFloat("uShininess", shininess);
+        shader->setFloat("uMetallic", metallic);
         // Cook-Torrance uniforms (no-op for other shaders)
-        shader->setFloat("F0", F0);
+        shader->setVec3("F0", F0);
+        shader->setVec3("uAlbedo", albedo);
         shader->setFloat("uRoughness", roughness);
         glBindVertexArray(VAO); 
         glDrawArrays(GL_TRIANGLES, 0, vertexCount);

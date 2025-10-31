@@ -8,9 +8,10 @@ uniform vec3 uViewPos;      // world-space camera position
 uniform vec3 uLightColor;   // light color (radiance)
 
 // PBR material parameters
-uniform vec3 uObjectColor;    // base albedo color (linear)
-uniform float F0;    // [0,1]
+uniform vec3 uAlbedo;         // 表面反射率/基础颜色 (linear)
+uniform vec3 F0;    // [0,1]
 uniform float uRoughness;   // [0,1]
+uniform float uMetallic;    // [0,1] 金属度：0=非金属，1=金属
 uniform float uAmbient;   // 环境光强度
 
 const float PI = 3.14159265359;
@@ -39,11 +40,9 @@ float GeometrySmith(vec3 N, vec3 V, vec3 L, float k)
     return ggx1 * ggx2;
 }
 
-vec3 fresnelSchlick(float cosTheta)
+vec3 fresnelSchlick(float cosTheta, vec3 F0)
 {
-    // Use scalar F0 from CPU and lift to vec3 to avoid changing the app-side uniform type.
-    vec3 F0vec = vec3(F0);
-    return F0vec + (1.0 - F0vec) * pow(1.0 - cosTheta, 5.0);
+    return F0 + (1.0 - F0) * pow(1.0 - cosTheta, 5.0);
 }
 
 void main()
@@ -60,23 +59,24 @@ void main()
     float NdotL = max(dot(N, L), 0.0);
     float cosTheta = max(dot(H, V), 0.0); // Fresnel uses angle between V and H
 
+    vec3 F0_calculated = mix(vec3(0.04), uAlbedo, uMetallic);
+
     // Cook-Torrance BRDF components
     float D = DistributionGGX(N, H, a);
     float G = GeometrySmith(N, V, L, k);
-    vec3  F = fresnelSchlick(cosTheta);
+    vec3  F = fresnelSchlick(cosTheta, F0_calculated);
 
     float denom = max(4.0 * NdotV * NdotL, 1e-4);
     vec3 specular = (D * G * F) / denom;
 
-    // Lambertian diffuse with energy conservation: kd = 1 - F
-    vec3 kd = (vec3(1.0) - F);
-    vec3 diffuse = kd * (1.0 / PI);
+    vec3 kd = (vec3(1.0) - F) * (1.0 - uMetallic);
+    vec3 diffuse = kd * uAlbedo * (1.0 / PI);
 
-    // Lighting: no distance attenuation to keep parity with other shaders
-    vec3 ambient = uAmbient * uLightColor;
     vec3 radiance = uLightColor * NdotL;
     vec3 Lo = (diffuse + specular) * radiance;
+    
+    vec3 ambient = uAmbient * uLightColor * mix(uAlbedo, uAlbedo * 0.5, uMetallic);
 
-    vec3 color = (ambient + Lo) * uObjectColor;
+    vec3 color = ambient + Lo;
     FragColor = vec4(color, 1.0);
 }
